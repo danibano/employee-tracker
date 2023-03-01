@@ -12,7 +12,7 @@ VALUES
 INSERT INTO roles (title, salary, department_id)
 VALUES ('Vocal Coach', 90000, 1),
        ('Lead Singer', 80000, 1),
-       ('Backup Vocalist', 50000,1)
+       ('Backup Vocalist', 50000,1),
        ('Choreographer', 75000, 2),
        ('Backup Dancer', 40000, 2),
        ('Talent Manager', 100000, 3),
@@ -30,9 +30,9 @@ VALUES
     ('Olivia', 'Rodgrigo', 3, 1),
     ('Sean', 'Lew', 4, NULL),
     ('Kaycee', 'Rice', 5, 4),
-    ('Selena', 'Gomez', 6, NULL)
+    ('Selena', 'Gomez', 6, NULL),
     ('Tom', 'Holland', 7, 6),
     ('Zendaya', 'Coleman', 8, 6),
     ('Louis', 'Vuitton', 9, NULL),
     ('Bretman', 'Rock', 10, 9),
-    ('Marc', 'Jacobs', 11, 9)
+    ('Marc', 'Jacobs', 11, 9);
