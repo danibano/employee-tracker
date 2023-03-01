@@ -1,6 +1,7 @@
 const inquirer = require('inquirer');
 const mysql = require('mysql2');
 const consoleTable = require('console.table');
+const { up } = require('inquirer/lib/utils/readline');
 
 
 // This connects with the database
@@ -156,8 +157,8 @@ const getManagers = async () => {
     const [rows] = await db.promise().query(query);
     const managers = rows.map(row => (
       { name: row.name, 
-        value: row.id }
-        ));
+        value: row.id 
+      }));
 
       if (managers.length === 0){
         return null
@@ -169,8 +170,7 @@ const getManagers = async () => {
   }
 };
 
-
-const addEmployee =  async () => {
+const getRoles = async () => {
   try {
     const [rolesRows] = await db.promise().query('SELECT * FROM roles');
     const roleChoices = rolesRows.map(row => (
@@ -178,8 +178,18 @@ const addEmployee =  async () => {
         name: row.title, 
         value: row.id 
       }));
+      
+      return roleChoices;
+    } catch (err) {
+      console.log(err)
+    }
+}
 
+
+const addEmployee =  async () => {
+  try{
     const managers = await getManagers();
+    const roles = await getRoles();
 
     const newEmployee = await inquirer.prompt([
       {
@@ -208,7 +218,7 @@ const addEmployee =  async () => {
         type: 'list',
         name: 'role_id',
         message: 'Select the role for this employee',
-        choices: roleChoices
+        choices: roles
       },
       {
         type: 'list',
@@ -227,12 +237,85 @@ const addEmployee =  async () => {
       manager_id: managerId
     });
 
-    console.log(`${newEmployee.first_name} ${newEmployee.last_name} added to employees! `)
+    console.log(`${newEmployee.first_name} ${newEmployee.last_name} added to employees! `);
   } catch (err){
     console.log(err)
   }
 
   mainMenu()
+}
+
+const updateEmployee = async () => {
+  try {
+    const [employeeRows] = await db.promise().query('SELECT * FROM employees');
+    const employeeChoices = employeeRows.map(row => (
+      { 
+        name: `${row.first_name} ${row.last_name}`, 
+        value: row.id 
+      }));
+
+      const managers = await getManagers();
+      const roles = await getRoles();
+
+      const updatedEmployee = await inquirer.prompt([
+        {
+          type: 'list',
+          name: 'employee_id',
+          message: 'Which employee would you life to update?',
+          choices: employeeChoices
+        },
+        {
+          type: 'input',
+          name: 'first_name',
+          message: 'Enter the updated first name: ',
+          validate: function (input) {
+            if (!input) {
+              return 'Please enter your first name!';
+            }
+            return true;
+          }
+        },
+        {
+          type: 'input',
+          name: 'last_name',
+          message: 'Enter updated last name: ',
+          validate: function (input) {
+            if (!input) {
+              return 'Please enter your last name!';
+            }
+            return true;
+          }
+        },
+        {
+          type: 'list',
+          name: 'role_id',
+          message: 'Select the new role for this employee',
+          choices: roles
+        },
+        {
+          type: 'list',
+          message: "Select the employee's manager.",
+          choices: managers ? [...managers, 'None'] : ['None'],
+          name: 'manager_id'
+        }
+      ]);
+
+      await db.promise().query('UPDATE employees SET ? WHERE id = ?', [
+        {
+          first_name: updatedEmployee.first_name,
+          last_name: updatedEmployee.last_name,
+          role_id: updatedEmployee.role_id,
+          manager_id: updatedEmployee.manager_id
+        },
+        updatedEmployee.employee_id
+      ])
+
+      console.log(`Employee with ID ${updatedEmployee.employee_id} has been updated!`)
+  } catch (err) {
+    console.log(err)
+  }
+
+mainMenu()
 }
 
 
