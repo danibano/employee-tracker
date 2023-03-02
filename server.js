@@ -12,7 +12,7 @@ const db = mysql.createConnection(
         password: 'dance5678!',
         database:'employee_db'
     }
-)
+);
 
 const mainMenu = async () =>{
   const {backMenu} = await inquirer.prompt([
@@ -32,7 +32,7 @@ const mainMenu = async () =>{
     process.exit();
       break;
   }
-}
+};
 
 
 const viewDepartments = () => {
@@ -45,7 +45,7 @@ const viewDepartments = () => {
   })
 
   mainMenu()
-}
+};
 
 const viewRoles = () => {
   db.query('SELECT * FROM roles', (err, results) => {
@@ -57,7 +57,7 @@ const viewRoles = () => {
   })
 
   mainMenu()
-}
+};
 
 const viewEmployees = () => {
   db.query('SELECT * FROM employees', (err, results) => {
@@ -69,7 +69,7 @@ const viewEmployees = () => {
   })
 
   mainMenu()
-}
+};
 
 const addDepartment = async () => {
   try {
@@ -94,17 +94,27 @@ const addDepartment = async () => {
   }
 
   mainMenu()
-}
+};
 
-const addRole = async () => {
+ const getDepartment = async () => {
   try {
-
     const [rows] = await db.promise().query('SELECT * FROM departments');
     const departmentChoices = rows.map(row => (
       { 
         name: row.name, 
         value: row.id 
       }));
+
+    return departmentChoices;
+  } catch (err) {
+    console.log(err)
+  }
+}
+
+const addRole = async () => {
+  try {
+
+    const department = await getDepartment();
 
     const newRole = await inquirer.prompt([
       {
@@ -133,7 +143,7 @@ const addRole = async () => {
         type: 'list',
         name: 'department_id',
         message: 'Select the department id for this role',
-        choices: departmentChoices
+        choices: department
       }
     ])
 
@@ -148,7 +158,7 @@ const addRole = async () => {
   }
 
   mainMenu()
-}
+};
 
 const getManagers = async () => {
   const query = `SELECT CONCAT(first_name, ' ', last_name) AS name, id FROM employees WHERE manager_id IS NULL`;
@@ -183,7 +193,22 @@ const getRoles = async () => {
     } catch (err) {
       console.log(err)
     }
-}
+};
+
+const getEmployees = async () => {
+  try {
+    const [employeeRows] = await db.promise().query('SELECT * FROM employees');
+    const employeeChoices = employeeRows.map(row => (
+      { 
+        name: `${row.first_name} ${row.last_name}`, 
+        value: row.id 
+      }));
+
+      return employeeChoices
+    } catch (err) {
+      console.log(err)
+    };
+};
 
 
 const addEmployee =  async () => {
@@ -247,13 +272,7 @@ const addEmployee =  async () => {
 
 const updateEmployee = async () => {
   try {
-    const [employeeRows] = await db.promise().query('SELECT * FROM employees');
-    const employeeChoices = employeeRows.map(row => (
-      { 
-        name: `${row.first_name} ${row.last_name}`, 
-        value: row.id 
-      }));
-
+      const employees = await getEmployees();
       const managers = await getManagers();
       const roles = await getRoles();
 
@@ -262,7 +281,7 @@ const updateEmployee = async () => {
           type: 'list',
           name: 'employee_id',
           message: 'Which employee would you life to update?',
-          choices: employeeChoices
+          choices: employees
         },
         {
           type: 'input',
@@ -316,7 +335,92 @@ const updateEmployee = async () => {
   }
 
 mainMenu()
-}
+};
+
+const updateManager = async () => {
+  try {
+    const employees = await getEmployees();
+    const managers = await getManagers();
+    const { employee_id, manager_id } = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'employee_id',
+        message: 'Which employee would you like to update?',
+        choices: employees
+      },
+      {
+        type: 'list',
+        name: 'manager_id',
+        message: 'Select the new manager for this employee',
+        choices: managers
+      }
+    ]);
+
+    await db.promise().query('UPDATE employees SET manager_id = ? WHERE id = ?', [manager_id, employee_id]);
+
+    console.log(`Employee ${employee_id} has been updated with new manager ${manager_id}.`);
+  } catch (err) {
+    console.log(err);
+  }
+
+  mainMenu();
+
+};
+
+const viewEmployeeManager = async () => {
+  try{
+    const managers = await getManagers();
+    const { manager_id } = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'manager_id',
+        message: 'Select the manager to view employees',
+        choices: managers
+      }
+    ]);
+
+    const query = `SELECT CONCAT(first_name, ' ', last_name) AS name, title 
+                   FROM employees 
+                   JOIN roles ON employees.role_id = roles.id 
+                   WHERE manager_id = ?`;
+
+    const [employeeRows] = await db.promise().query(query, [manager_id]);
+
+    console.table(employeeRows);
+  } catch (err) {
+    console.log(err);
+  }
+
+  mainMenu();
+};
+
+const viewEmployeeDepartment = async () => {
+  try {
+    const department = await getDepartment();
+    const { department_id } = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'department_id',
+        message: 'Select a department to view employees:',
+        choices: department
+      }
+    ]);
+
+    const [employeesRows] = await db.promise().query(`
+      SELECT e.id, e.first_name, e.last_name, r.title AS role_title, d.name AS department_name, r.salary
+      FROM employees e
+      INNER JOIN roles r ON e.role_id = r.id
+      INNER JOIN departments d ON r.department_id = d.id
+      WHERE d.id = ?
+    `, department_id);
+
+    console.table(employeesRows);
+  } catch (err) {
+    console.log(err);
+  }
+
+  mainMenu();
+};
 
 
 
@@ -330,10 +434,13 @@ const displayMenu = async () => {
         'View all departments',
         'View all roles',
         'View all employees',
+        'View employee by manager',
+        'View employee by department',
         'Add a department',
         'Add a role',
         'Add an employee',
         'Update an employee role',
+        'Update employee manager',
         'Exit'
       ]
     }
@@ -346,6 +453,10 @@ const displayMenu = async () => {
       break;
     case 'View all employees': viewEmployees();
       break;
+    case 'View employee by manager': viewEmployeeManager();
+      break
+    case 'View employee by department': viewEmployeeDepartment();
+      break
     case 'Add a department': addDepartment();
       break;
     case 'Add a role': addRole()
@@ -353,6 +464,8 @@ const displayMenu = async () => {
     case 'Add an employee': addEmployee();
       break;
     case 'Update an employee role': updateEmployee();
+      break;
+    case 'Update employee manager': updateManager();
       break;
     case 'Exit':
       console.log('Goodbye!');
