@@ -41,10 +41,9 @@ const viewDepartments = () => {
           console.log(err)
       } else {
           console.table(results);
+          mainMenu()
       }
   })
-
-  mainMenu()
 };
 
 const viewRoles = () => {
@@ -53,10 +52,9 @@ const viewRoles = () => {
       console.log(err)
     } else {
       console.table(results)
+      mainMenu()
     }
   })
-
-  mainMenu()
 };
 
 const viewEmployees = () => {
@@ -65,10 +63,9 @@ const viewEmployees = () => {
       console.log(err)
     } else {
       console.table(results)
+      mainMenu()
     } 
   })
-
-  mainMenu()
 };
 
 const addDepartment = async () => {
@@ -89,11 +86,10 @@ const addDepartment = async () => {
     const department = {name: newDepartment.departmentName};
     const res = await db.promise().query('INSERT INTO departments SET ?', department);
     console.log(`${res[0].affectedRows} department added!`);
+    mainMenu()
   } catch (err){
     console.log(err)
   }
-
-  mainMenu()
 };
 
  const getDepartment = async () => {
@@ -153,11 +149,10 @@ const addRole = async () => {
   department_id: newRole.department_id
 });
     console.log(`${newRole.title} added to roles! `)
+    mainMenu()
   } catch (err){
     console.log(err)
   }
-
-  mainMenu()
 };
 
 const getManagers = async () => {
@@ -263,11 +258,10 @@ const addEmployee =  async () => {
     });
 
     console.log(`${newEmployee.first_name} ${newEmployee.last_name} added to employees! `);
+    mainMenu()
   } catch (err){
     console.log(err)
   }
-
-  mainMenu()
 }
 
 const updateEmployee = async () => {
@@ -330,11 +324,10 @@ const updateEmployee = async () => {
       ])
 
       console.log(`Employee with ID ${updatedEmployee.employee_id} has been updated!`)
+      mainMenu()
   } catch (err) {
     console.log(err)
   }
-
-mainMenu()
 };
 
 const updateManager = async () => {
@@ -359,11 +352,10 @@ const updateManager = async () => {
     await db.promise().query('UPDATE employees SET manager_id = ? WHERE id = ?', [manager_id, employee_id]);
 
     console.log(`Employee ${employee_id} has been updated with new manager ${manager_id}.`);
+    mainMenu();
   } catch (err) {
     console.log(err);
   }
-
-  mainMenu();
 
 };
 
@@ -387,11 +379,10 @@ const viewEmployeeManager = async () => {
     const [employeeRows] = await db.promise().query(query, [manager_id]);
 
     console.table(employeeRows);
+    mainMenu();
   } catch (err) {
     console.log(err);
   }
-
-  mainMenu();
 };
 
 const viewEmployeeDepartment = async () => {
@@ -415,11 +406,10 @@ const viewEmployeeDepartment = async () => {
     `, department_id);
 
     console.table(employeesRows);
+    mainMenu();
   } catch (err) {
     console.log(err);
   }
-
-  mainMenu();
 };
 
 
